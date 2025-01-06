@@ -103,3 +103,18 @@ fn main() {
     println!("{}", part1(&lines));
     println!("{}", part2(&lines));
 }
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn it_works() {
+        let lines = vec!["A Y",
+                         "B X",
+                         "C Z"].iter().map(|s| s.to_string()).collect::<Vec<_>>();
+        let result = part1(&lines);
+        assert_eq!(result, 15);
+        let result = part2(&lines);
+        assert_eq!(result, 12);
+    }
+}

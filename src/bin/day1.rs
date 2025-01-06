@@ -1,5 +1,3 @@
-use std::fs::File;
-use std::io::{self, BufRead};
 use aoc_2022::read_lines_as_vec;
 
 fn part2(lines: &[String]) -> u32 {
@@ -67,5 +65,31 @@ fn main() {
     //                  "10000"].iter().map(|s| s.to_string()).collect::<Vec<_>>();
     println!("{}", part1(&lines));
     println!("{}", part2(&lines));
+}
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn it_works() {
+        let lines = vec!["1000",
+                         "2000",
+                         "3000",
+                         "",
+                         "4000",
+                         "",
+                         "5000",
+                         "6000",
+                         "",
+                         "7000",
+                         "8000",
+                         "9000",
+                         "",
+                         "10000"].iter().map(|s| s.to_string()).collect::<Vec<_>>();
+        let result = part1(&lines);
+        assert_eq!(result, 24000);
+        let result = part2(&lines);
+        assert_eq!(result, 45000);
+    }
 }
