@@ -5,11 +5,11 @@ fn part2(lines: &[String]) -> u32 {
     // 2508
     let mut sum = 0u32;
     for (_, group) in lines.chunks(3).enumerate() {
-        let rucksack1: HashSet<char> = group[0].chars().collect();
-        let rucksack2: HashSet<char> = group[1].chars().collect();
-        let rucksack3: HashSet<char> = group[2].chars().collect();
+        let rucksack1 = group[0].chars().collect::<HashSet<_>>();
+        let rucksack2 = group[1].chars().collect::<HashSet<_>>();
+        let rucksack3 = group[2].chars().collect::<HashSet<_>>();
 
-        let mut i1 = rucksack1.intersection(&rucksack2).cloned().collect::<HashSet<_>>();
+        let i1 = rucksack1.intersection(&rucksack2).cloned().collect::<HashSet<_>>();
         let i2 = i1.intersection(&rucksack3).collect::<Vec<_>>();
 
         for (_, c) in i2.iter().enumerate() {
@@ -35,8 +35,8 @@ fn part1(lines: &[String]) -> u32 {
     for (_, line) in lines.iter().enumerate() {
         let rucksack_size = line.len() / 2;
 
-        let rucksack1: HashSet<char> = line[0..rucksack_size].chars().collect();
-        let rucksack2: HashSet<char> = line[rucksack_size..].chars().collect();
+        let rucksack1 = line[0..rucksack_size].chars().collect::<HashSet<_>>();
+        let rucksack2 = line[rucksack_size..].chars().collect::<HashSet<_>>();
         let intersection = rucksack1.intersection(&rucksack2).collect::<Vec<_>>();
         // println!("{:?}", intersection);
 
