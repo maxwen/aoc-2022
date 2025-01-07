@@ -2,18 +2,26 @@ use std::collections::HashSet;
 use aoc_2022::read_lines_as_vec;
 
 fn part2(lines: &[String]) -> u32 {
-    0u32
+    // 2508
+    let mut sum = 0u32;
+    for (_, group) in lines.chunks(3).enumerate() {
+        let rucksack1: HashSet<char> = group[0].chars().collect();
+        let rucksack2: HashSet<char> = group[1].chars().collect();
+        let rucksack3: HashSet<char> = group[2].chars().collect();
+
+        let mut i1 = rucksack1.intersection(&rucksack2).cloned().collect::<HashSet<_>>();
+        let i2 = i1.intersection(&rucksack3).collect::<Vec<_>>();
+
+        for (_, c) in i2.iter().enumerate() {
+            sum += get_priority(c)
+        }
+    }
+    sum
 }
 
 fn get_priority(c: &char) -> u32 {
-
     // Lowercase item types a through z have priorities 1 through 26.
     // Uppercase item types A through Z have priorities 27 through 52.
-    // match c {
-    //     'a'..'z' => c.to_ascii_lowercase() as u32,
-    //     'A'..'Z' => 1,
-    //     _ => 0
-    // }
     if c.is_lowercase() {
         c.to_ascii_lowercase() as u32 - 96
     } else {
@@ -52,7 +60,7 @@ fn main() {
 }
 #[cfg(test)]
 mod tests {
-    use crate::part1;
+    use crate::{part1, part2};
 
     #[test]
     fn it_works() {
@@ -64,7 +72,7 @@ mod tests {
                          "CrZsJsPPZsGzwwsLwLmpwMDw"].iter().map(|s| s.to_string()).collect::<Vec<_>>();
         let result = part1(&lines);
         assert_eq!(result, 157);
-        // let result = part2(&lines);
-        // assert_eq!(result, 12);
+        let result = part2(&lines);
+        assert_eq!(result, 70);
     }
 }
