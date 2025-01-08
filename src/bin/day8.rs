@@ -1,34 +1,30 @@
 use aoc_2022::read_lines_as_vec;
-use std::collections::HashMap;
 
 fn part1(lines: &[String]) -> u32 {
     // 1814
     let mut sum = 0u32;
-    let mut trees: HashMap<(usize, usize), u32> = HashMap::new();
     let mut grid = vec![];
     let grid_size = lines.len();
 
-    for (y, line) in lines.iter().enumerate() {
+    for (_, line) in lines.iter().enumerate() {
         if line.len() != 0 {
             let mut l = vec![];
-            for (x, c) in line.chars().enumerate() {
-                let pos = (x, y);
+            for (_, c) in line.chars().enumerate() {
                 let height = c.to_digit(10u32).unwrap();
                 l.push(height);
-                // edge trees are always visible
-                if x > 0 && x < grid_size - 1 && y > 0 && y < grid_size - 1 {
-                    trees.insert(pos, height);
-                }
             }
             grid.push(l);
         }
     }
 
-    // edges
+    // edge trees are always visible
     sum += (grid_size as u32 * 4) - 4;
-    for pos in trees.keys() {
-        if is_visible(&grid, *pos) {
-            sum += 1
+
+    for y in 1..grid_size - 1 {
+        for x in 1..grid_size - 1 {
+            if is_visible(&grid, (x, y)) {
+                sum += 1
+            }
         }
     }
     sum
