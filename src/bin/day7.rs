@@ -65,7 +65,7 @@ fn print_tree(dir: &Dir, level: usize) {
     }
 }
 
-fn cwd_to_dir<'a>(root: &'a mut Dir, current_dir: &'a mut Dir, cwd: &'a Vec<&'a str>, level: usize) -> &'a mut Dir {
+fn cwd_to_dir<'a>(root: &'a mut Dir, current_dir: &'a mut Dir, cwd: &'a Vec<String>, level: usize) -> &'a mut Dir {
     if level == cwd.len() - 1 {
         return current_dir;
     }
@@ -86,7 +86,7 @@ fn part1(lines: &[String]) -> u32 {
     let mut root = Dir::new("/");
     let mut empty_root = Dir::new("/");
     let mut dir_list = HashSet::new();
-    let mut cwd = vec!["/"];
+    let mut cwd = vec!["/".to_string()];
 
     for (_, line) in lines.iter().enumerate() {
         if line.starts_with("$ ls") {
@@ -99,10 +99,10 @@ fn part1(lines: &[String]) -> u32 {
                 }
                 "/" => {
                     cwd.clear();
-                    cwd.push("/");
+                    cwd.push("/".to_string());
                 }
                 _ => {
-                    cwd.push(dir);
+                    cwd.push(dir.to_string());
                     dir_list.insert(cwd.clone());
                 }
             }
@@ -141,7 +141,7 @@ fn part2(lines: &[String]) -> u32 {
     let mut root = Dir::new("/");
     let mut empty_root = Dir::new("/");
     let mut dir_list = HashSet::new();
-    let mut cwd = vec!["/"];
+    let mut cwd = vec!["/".to_string()];
     dir_list.insert(cwd.clone());
 
     for (_, line) in lines.iter().enumerate() {
@@ -155,10 +155,10 @@ fn part2(lines: &[String]) -> u32 {
                 }
                 "/" => {
                     cwd.clear();
-                    cwd.push("/");
+                    cwd.push("/".to_string());
                 }
                 _ => {
-                    cwd.push(dir);
+                    cwd.push(dir.to_string());
                     dir_list.insert(cwd.clone());
                 }
             }
@@ -180,7 +180,7 @@ fn part2(lines: &[String]) -> u32 {
     }
 
     let mut c = vec![];
-    c.push("/");
+    c.push("/".to_string());
     let e = cwd_to_dir(&mut empty_root, &mut root, &c, 0);
 
     let total_size = 70000000;
@@ -192,7 +192,7 @@ fn part2(lines: &[String]) -> u32 {
 
     let mut possible_delete_size = vec![];
     for c in dir_list.iter() {
-        let e = cwd_to_dir(&mut empty_root, &mut root, &c, 0);
+        let e = cwd_to_dir(&mut empty_root, &mut root, c, 0);
         let size = calc_size(e, 0);
         if size > need_to_free_space {
             possible_delete_size.push(size);
