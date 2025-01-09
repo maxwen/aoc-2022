@@ -1,6 +1,4 @@
 use aoc_2022::read_lines_as_vec;
-use itertools::Itertools;
-use std::ops::Rem;
 
 fn draw_crt(crt: Vec<Vec<u8>>) {
     for y in 0..6 {
@@ -21,10 +19,6 @@ fn cyle_to_crt_pos(cycle: i32) -> (i32, i32) {
     // 240 -> 39,5
     let line = (cycle - 1) / 40;
     ((cycle - 1) - (line * 40), line)
-}
-
-fn set_dark_pixel(crt: &mut Vec<Vec<u8>>, pos: (i32, i32)) {
-    crt[pos.1 as usize][pos.0 as usize] = 0
 }
 
 fn set_lit_pixel(crt: &mut Vec<Vec<u8>>, pos: (i32, i32)) {
@@ -91,8 +85,7 @@ fn part1(lines: &[String]) -> i32 {
 
 fn main() {
     let lines = read_lines_as_vec("input/input_day10.txt").unwrap();
-
-    // let lines = read_lines_as_vec("input_test/input_day10_mod.txt").unwrap();
+    // let lines = read_lines_as_vec("input_test/input_day10_test.txt").unwrap();
 
     println!("{}", part1(&lines));
     part2(&lines);
@@ -104,9 +97,9 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let lines = read_lines_as_vec("input_test/input_day10_mod.txt").unwrap();
+        let lines = read_lines_as_vec("input_test/input_day10_test.txt").unwrap();
 
         let result = part1(&lines);
-        assert_eq!(result, 11340);
+        assert_eq!(result, 13140);
     }
 }
