@@ -1,6 +1,7 @@
 use aoc_2022::read_lines_as_vec;
 use std::cell::RefCell;
 use std::collections::{HashMap, VecDeque};
+use itertools::Itertools;
 
 #[derive(Debug, Clone)]
 struct Monkey {
@@ -33,6 +34,27 @@ impl Monkey {
             return true;
         }
         false
+    }
+
+    fn inspect_item2(&mut self, monkey_map: &HashMap<usize, RefCell<Monkey>>, supermodulo: u64) -> bool {
+        if self.stack.len() != 0 {
+            let monkey_true = &mut *monkey_map.get(&self.monkey_true_idx).unwrap().borrow_mut();
+            let monkey_false = &mut *monkey_map.get(&self.monkey_false_idx).unwrap().borrow_mut();
+            let item = self.stack.pop_front().unwrap();
+            let item_new = (self.operation)(item);
+            let item_bored = if supermodulo != 0 { item_new % supermodulo } else { item_new / 3 };
+
+            if (self.condition)(item_bored) {
+                monkey_true.add_item(item_bored)
+            } else {
+                monkey_false.add_item(item_bored)
+            }
+            self.inspect_count += 1;
+
+            return true;
+        }
+        false
+
     }
 }
 
@@ -129,13 +151,10 @@ fn part1(lines: &[String]) -> u64 {
     monkey_map.insert(7, RefCell::new(monkey7));
 
     for _ in 0..20 {
-        for idx in 0..8 {
-            let m = monkey_map.get(&idx).unwrap();
-            let m_true = monkey_map.get(&m.borrow().monkey_true_idx).unwrap();
-            let m_false = monkey_map.get(&m.borrow().monkey_false_idx).unwrap();
-
-            while m.borrow_mut().inspect_item(&mut *m_true.borrow_mut(), &mut *m_false.borrow_mut(), 0) {}
-        }
+        monkey_map.keys().sorted().for_each(|idx| {
+            let mut m = monkey_map.get(&idx).unwrap().borrow_mut();
+            while m.inspect_item2(&monkey_map, 0) {}
+        });
     }
 
     let mut inspect_count = vec![];
@@ -251,13 +270,10 @@ fn part2(lines: &[String]) -> u64 {
     let supermodulo = test_values.iter().product();
 
     for _ in 0..10000 {
-        for idx in 0..8 {
-            let m = monkey_map.get(&idx).unwrap();
-            let m_true = monkey_map.get(&m.borrow().monkey_true_idx).unwrap();
-            let m_false = monkey_map.get(&m.borrow().monkey_false_idx).unwrap();
-
-            while m.borrow_mut().inspect_item(&mut *m_true.borrow_mut(), &mut *m_false.borrow_mut(), supermodulo) {}
-        }
+        monkey_map.keys().sorted().for_each(|idx| {
+            let mut m = monkey_map.get(&idx).unwrap().borrow_mut();
+            while m.inspect_item2(&monkey_map, supermodulo) {}
+        });
     }
 
     let mut inspect_count = vec![];
