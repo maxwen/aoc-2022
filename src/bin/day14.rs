@@ -55,9 +55,9 @@ fn print_grid(grid: &Grid, start: (i32, i32)) {
     }
 }
 
-// fn is_possible_move(grid: &Grid, pos: (i32, i32)) -> bool {
-//     pos.0 >= grid.min_x && pos.0 <= grid.max_x && pos.1 <= grid.max_y
-// }
+fn is_possible_move(grid: &Grid, pos: (i32, i32)) -> bool {
+    pos.1 <= grid.max_y
+}
 
 fn try_move_sand(grid: &mut Grid, pos: (i32, i32)) -> Option<(i32, i32)> {
     let down = (pos.0, pos.1 + 1);
@@ -84,6 +84,37 @@ fn try_move_sand(grid: &mut Grid, pos: (i32, i32)) -> Option<(i32, i32)> {
     None
 }
 
+fn try_move_sand_with_floor(grid: &mut Grid, pos: (i32, i32)) -> ((i32, i32), bool) {
+    let down = (pos.0, pos.1 + 1);
+    if grid.data.get(&down).is_none() {
+        if is_possible_move(grid, down) {
+            grid.data.remove(&pos);
+            grid.data.insert(down, Tile::Sand);
+            return (down, true);
+        }
+    }
+
+    let down_left = (pos.0 - 1, pos.1 + 1);
+    if grid.data.get(&down_left).is_none() {
+        if is_possible_move(grid, down) {
+            grid.data.remove(&pos);
+            grid.data.insert(down_left, Tile::Sand);
+            return (down_left, true);
+        }
+    }
+
+    let down_right = (pos.0 + 1, pos.1 + 1);
+    if grid.data.get(&down_right).is_none() {
+        if is_possible_move(grid, down) {
+            grid.data.remove(&pos);
+            grid.data.insert(down_right, Tile::Sand);
+            return (down_right, true);
+        }
+    }
+
+    (pos, false)
+}
+
 fn part1(lines: &[String]) -> u32 {
     // 1406
     let mut grid = Grid {
@@ -92,27 +123,10 @@ fn part1(lines: &[String]) -> u32 {
         max_x: 0,
         max_y: 0,
     };
+
+    build_grid(&mut grid, &lines);
+
     let start = (500, 0);
-
-    for (_, line) in lines.iter().enumerate() {
-        let mut last: Option<(i32, i32)> = None;
-        for (_, ccords) in line.split(" -> ").enumerate() {
-            let pair = ccords.split(",").collect::<Vec<_>>();
-            let x: i32 = pair.first().unwrap().parse().unwrap();
-            let y: i32 = pair.last().unwrap().parse().unwrap();
-            grid.max_y = max(grid.max_y, y);
-            grid.min_x = min(grid.min_x, x);
-            grid.max_x = max(grid.max_x, x);
-
-            if last.is_some() {
-                mark_as_rock(&mut grid, last.unwrap(), (x, y))
-            }
-            last = Some((x, y))
-        }
-    }
-
-    // print_grid(&grid, start);
-
     let mut overflow = false;
     let mut count = 0;
     while !overflow {
@@ -142,9 +156,63 @@ fn part1(lines: &[String]) -> u32 {
 
 
 fn part2(lines: &[String]) -> u32 {
-    0u32
+    // 20870
+    let mut grid = Grid {
+        data: HashMap::new(),
+        min_x: i32::MAX,
+        max_x: 0,
+        max_y: 0,
+    };
+
+    build_grid(&mut grid, &lines);
+
+    let start = (500, 0);
+    grid.max_y += 1;
+    grid.min_x -= 20;
+    grid.max_x += 20;
+
+    // print_grid(&grid, start);
+    let mut overflow = false;
+    let mut count = 0;
+    while !overflow {
+        let mut sand_corn = start;
+
+        loop {
+            let (new_pos, moved) = try_move_sand_with_floor(&mut grid, sand_corn);
+            if !moved {
+                count += 1;
+
+                if new_pos == start {
+                    // print_grid(&grid, start);
+                    overflow = true;
+                }
+                break;
+            } else {
+                sand_corn = new_pos
+            }
+        }
+    }
+    count
 }
 
+fn build_grid(grid: &mut Grid, lines: &[String]) {
+    for (_, line) in lines.iter().enumerate() {
+        let mut last: Option<(i32, i32)> = None;
+        for (_, ccords) in line.split(" -> ").enumerate() {
+            let pair = ccords.split(",").collect::<Vec<_>>();
+            let x: i32 = pair.first().unwrap().parse().unwrap();
+            let y: i32 = pair.last().unwrap().parse().unwrap();
+            grid.max_y = max(grid.max_y, y);
+            grid.min_x = min(grid.min_x, x);
+            grid.max_x = max(grid.max_x, x);
+
+            if last.is_some() {
+                mark_as_rock(grid, last.unwrap(), (x, y))
+            }
+            last = Some((x, y))
+        }
+    }
+}
 
 fn main() {
     let lines = read_lines_as_vec("input/input_day14.txt").unwrap();
@@ -155,6 +223,7 @@ fn main() {
     println!("{}", part1(&lines));
     println!("{}", part2(&lines));
 }
+
 #[cfg(test)]
 mod tests {
     use crate::{part1, part2};
@@ -166,7 +235,7 @@ mod tests {
 
         let result = part1(&lines);
         assert_eq!(result, 24);
-        // let result = part2(&lines);
-        // assert_eq!(result, 36);
+        let result = part2(&lines);
+        assert_eq!(result, 93);
     }
 }
