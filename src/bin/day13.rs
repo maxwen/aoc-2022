@@ -6,10 +6,10 @@ fn get_sublist(string: &String) -> Vec<String> {
     let mut l = vec![];
     while idx < string.len() {
         if let Some(left) = string[idx..].find("[") {
-            if idx + left != idx {
-                l.push(string[idx..idx + left - 1].to_string());
-            }
             let start = idx + left;
+            if start != idx {
+                l.push(string[idx..start - 1].to_string());
+            }
             let mut lvl = 0;
             let mut end = 0;
             for (i, c) in string.get(start + 1..).unwrap().chars().enumerate() {
@@ -27,7 +27,7 @@ fn get_sublist(string: &String) -> Vec<String> {
             }
             l.push(string[start..end + 1].to_string());
             idx = end + 1;
-            if string.chars().nth(idx).unwrap_or('.') == ',' {
+            if string.starts_with(",") {
                 idx += 1;
             }
         } else {
@@ -38,13 +38,13 @@ fn get_sublist(string: &String) -> Vec<String> {
     l
 }
 
-#[derive(Debug,Eq,Ord)]
+#[derive(Debug, Eq, Ord)]
 enum Element {
     Integer(i32),
     List(Box<List>),
 }
 
-#[derive(Debug,Eq,Ord)]
+#[derive(Debug, Eq, Ord)]
 struct List {
     items: Vec<Element>,
 }
@@ -78,7 +78,7 @@ impl PartialOrd for Element {
             (&Element::Integer(ref a), &Element::Integer(ref b)) => a.partial_cmp(b),
             (&Element::List(ref a), &Element::List(ref b)) => a.partial_cmp(b),
             (&Element::List(ref a), &Element::Integer(ref b)) => a.partial_cmp(&Box::new(List { items: vec![Element::Integer(*b)] })),
-            (&Element::Integer(ref a), &Element::List(ref b)) => Box::new(List { items: vec![Element::Integer(*a)] }).partial_cmp(b),
+            (&Element::Integer(ref a), &Element::List(ref b)) => List { items: vec![Element::Integer(*a)] }.partial_cmp(b),
         }
     }
 }
@@ -96,7 +96,6 @@ fn split_lists(string: &String, root: &mut List) {
             root.items.push(Element::List(Box::new(l)));
         } else {
             let parts = part.split(",").collect::<Vec<&str>>();
-            let parts_len = parts.len();
             for p in parts {
                 if p.len() != 0 && p.chars().nth(0).unwrap().is_digit(10) {
                     let digits = re.find_iter(p).collect::<Vec<_>>();
@@ -116,7 +115,7 @@ fn part1(lines: &[String]) -> u32 {
     for pair in lines.chunks(3) {
         let packet1 = &pair[0];
         let packet2 = &pair[1];
-        println!("{}\n{}", packet1, packet2);
+        // println!("{}\n{}", packet1, packet2);
 
         let mut root = List {
             items: vec![],
@@ -130,7 +129,6 @@ fn part1(lines: &[String]) -> u32 {
         split_lists(&packet2[1..packet2.len() - 1].to_string(), &mut root1);
         // println!("root1 = {:?}", root1);
 
-        println!();
         if root < root1 {
             // println!("{}", pair_idx);
             sum += pair_idx
@@ -149,7 +147,7 @@ fn part2(lines: &[String]) -> u32 {
     let mut lines_list = vec![];
     for line in lines {
         if line.len() == 0 {
-            continue
+            continue;
         }
 
         lines_list.push(line.trim());
