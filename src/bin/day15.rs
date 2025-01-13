@@ -126,7 +126,7 @@ fn part2(lines: &[String], max_pos: i32) -> u64 {
 
     build_grid(&mut grid, &lines);
 
-    // fortunately there can only bne one line so we can stop
+    // fortunately there can only be one line so we can stop
     // right there
     for y in 0..max_pos + 1 {
         // use ranges to build possible values of x where it can be
@@ -136,7 +136,6 @@ fn part2(lines: &[String], max_pos: i32) -> u64 {
 
         for s in grid.sensors.values() {
             let x_coverage = s.get_coverage_x_area(y);
-            x_max_area_range_new.clear();
 
             // println!("y ={} x_max_area_range = {:?} {:?}", y, x_max_area_range, x_coverage);
             if x_coverage != (0, 0) {
@@ -161,7 +160,7 @@ fn part2(lines: &[String], max_pos: i32) -> u64 {
                     }
                 }
                 x_max_area_range.clear();
-                x_max_area_range_new.iter().for_each(|r| x_max_area_range.push(r.clone()));
+                x_max_area_range.append(&mut x_max_area_range_new);
             }
         }
         if !x_max_area_range.is_empty() {
