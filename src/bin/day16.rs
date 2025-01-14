@@ -1,8 +1,8 @@
-use aoc_2022::read_lines_as_vec;
 use itertools::Itertools;
+use std::collections::HashMap;
 use priority_queue::PriorityQueue;
 use regex::Regex;
-use std::collections::HashMap;
+use aoc_2022::read_lines_as_vec;
 
 #[derive(Debug, Clone)]
 struct Graph {
@@ -15,7 +15,6 @@ struct Valve {
     cost: u32,
     edges: Vec<Edge>,
     id: u32,
-    edges_id: Vec<Edge>,
 
 }
 
@@ -31,6 +30,24 @@ struct Edge {
 fn part1(lines: &[String]) -> u32 {
     // 2320
     let g = parse_lines(lines);
+    let d_matrix: Vec<Vec<u32>> = build_dist_matrix(&g);
+
+    let start_id = g.nodes.get("AA").unwrap().id;
+    let valves_to_visit = get_valves_with_flow(&g);
+
+    let init_mask: u64 = (1 << g.nodes.len()) - 1;
+    let mut mask_flow: HashMap<u64, u32> = HashMap::new();
+    let max_flow = tsp_mod(&g, init_mask, &mut mask_flow, start_id, &valves_to_visit, &d_matrix, 30, 0);
+
+    max_flow
+}
+
+// build distance matrix for all nodes usind good old dijkstra
+// also possible - use floyed warshall
+// https://www.geeksforgeeks.org/floyd-warshall-algorithm-dp-16/
+fn build_dist_matrix(g: &Graph) -> Vec<Vec<u32>> {
+    let size = g.nodes.values().len();
+    let mut d_matrix: Vec<Vec<u32>> = vec![vec![0u32; size]; size];
 
     let mut tmp_edge_map = HashMap::new();
     for (_, v) in g.nodes.iter() {
@@ -45,36 +62,22 @@ fn part1(lines: &[String]) -> u32 {
         tmp_edge_map.insert(v.id, tmp_edge_list);
     }
 
-    let size = g.nodes.values().len();
-    let mut d_matrix: Vec<Vec<u32>> = vec![vec![0u32; size]; size];
-
     // build distance matrix for all nodes usind good old dijkstra
     // also possible - use floyed warshall
     // https://www.geeksforgeeks.org/floyd-warshall-algorithm-dp-16/
     for pair in g.nodes.values().combinations(2) {
         let from = pair.first().unwrap().id;
         let to = pair.last().unwrap().id;
-        let d = dijkstra(&g, from, to, &tmp_edge_map);
+        let d = dijkstra(from, to, &tmp_edge_map);
         // println!("{}/{} to {}/{} = {}", get_valve_of_id(&g, from), from, get_valve_of_id(&g, to), to, d);
         d_matrix[from as usize][to as usize] = d;
         d_matrix[to as usize][from as usize] = d;
     }
-
-    let start_id = g.nodes.get("AA").unwrap().id;
-    let valves_to_visit = get_valves_with_flow(&g);
-
-    let init_mask: u64 = (1 << g.nodes.len()) - 1;
-    let mut mask_flow: HashMap<u64, u32> = HashMap::new();
-    let max_flow = tsp_mod(&g, init_mask, &mut mask_flow, start_id, &valves_to_visit, &d_matrix, 30, 0);
-
-    max_flow
+    d_matrix
 }
 
 fn get_valves_with_flow(g: &Graph) -> Vec<u32> {
     g.nodes.values().filter(|x| x.cost != 0).map(|x| x.id).collect::<Vec<_>>()
-}
-fn get_valve_of_id(g: &Graph, id: u32) -> String {
-    g.nodes.values().filter(|x| x.id == id).collect::<Vec<_>>().first().unwrap().name.to_string()
 }
 
 fn get_valve_cost_of_id(g: &Graph, id: u32) -> u32 {
@@ -113,7 +116,7 @@ fn tsp_mod(g: &Graph, mask: u64, memo: &mut HashMap<u64, u32>, current_valve: u3
     max_flow
 }
 
-fn dijkstra(g: &Graph, start_id: u32, end_id: u32, tmp_edge_map: &HashMap<u32, Vec<Edge>>) -> u32 {
+fn dijkstra(start_id: u32, end_id: u32, tmp_edge_map: &HashMap<u32, Vec<Edge>>) -> u32 {
     let mut stack = PriorityQueue::new();
     stack.push(start_id, 0);
 
@@ -171,7 +174,6 @@ fn parse_lines(lines: &[String]) -> Graph {
             cost,
             edges,
             id: valve_id,
-            edges_id: vec![],
         };
         g.nodes.insert(v.name.to_string(), v.clone());
         valve_id += 1;
@@ -181,34 +183,7 @@ fn parse_lines(lines: &[String]) -> Graph {
 fn part2(lines: &[String]) -> u32 {
     // 2967
     let g = parse_lines(lines);
-
-    let mut tmp_edge_map = HashMap::new();
-    for (_, v) in g.nodes.iter() {
-        let mut tmp_edge_list = vec![];
-        for e in v.edges.iter() {
-            let mut e_id = e.clone();
-            e_id.to_id = g.nodes.get(&e_id.to).unwrap().id;
-            e_id.from_id = g.nodes.get(&e_id.from).unwrap().id;
-            e_id.cost = g.nodes.get(&e_id.to).unwrap().cost;
-            tmp_edge_list.push(e_id);
-        }
-        tmp_edge_map.insert(v.id, tmp_edge_list);
-    }
-
-    let size = g.nodes.values().len();
-    let mut d_matrix: Vec<Vec<u32>> = vec![vec![0u32; size]; size];
-
-    // build distance matrix for all nodes usind good old dijkstra
-    // also possible - use floyed warshall
-    // https://www.geeksforgeeks.org/floyd-warshall-algorithm-dp-16/
-    for pair in g.nodes.values().combinations(2) {
-        let from = pair.first().unwrap().id;
-        let to = pair.last().unwrap().id;
-        let d = dijkstra(&g, from, to, &tmp_edge_map);
-        // println!("{}/{} to {}/{} = {}", get_valve_of_id(&g, from), from, get_valve_of_id(&g, to), to, d);
-        d_matrix[from as usize][to as usize] = d;
-        d_matrix[to as usize][from as usize] = d;
-    }
+    let d_matrix: Vec<Vec<u32>> = build_dist_matrix(&g);
 
     let start_id = g.nodes.get("AA").unwrap().id;
     let valves_to_visit = get_valves_with_flow(&g);
@@ -216,10 +191,10 @@ fn part2(lines: &[String]) -> u32 {
     let init_mask: u64 = (1 << g.nodes.len()) - 1;
 
     let mut elf_mask_flow: HashMap<u64, u32> = HashMap::new();
-    let elf_flow = tsp_mod(&g, init_mask, &mut elf_mask_flow, start_id, &valves_to_visit, &d_matrix, 26, 0);
+    let _ = tsp_mod(&g, init_mask, &mut elf_mask_flow, start_id, &valves_to_visit, &d_matrix, 26, 0);
 
     let mut elephant_mask_flow: HashMap<u64, u32> = HashMap::new();
-    let elephant_flow = tsp_mod(&g, init_mask, &mut elephant_mask_flow, start_id, &valves_to_visit, &d_matrix, 26, 0);
+    let _ = tsp_mod(&g, init_mask, &mut elephant_mask_flow, start_id, &valves_to_visit, &d_matrix, 26, 0);
 
     let max_flow_2 = elf_mask_flow
         .iter()
@@ -246,18 +221,18 @@ fn main() {
     println!("{}", part2(&lines));
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use crate::{part1, part2};
-//     use aoc_2022::read_lines_as_vec;
-//
-//     #[test]
-//     fn it_works() {
-//         let lines = read_lines_as_vec("input_test/input_day15_test.txt").unwrap();
-//
-//         let result = part1(&lines, 10);
-//         assert_eq!(result, 26);
-//         let result = part2(&lines, 20);
-//         assert_eq!(result, 56000011);
-//     }
-// }
+#[cfg(test)]
+mod tests {
+    use crate::{part1, part2};
+    use aoc_2022::read_lines_as_vec;
+
+    #[test]
+    fn it_works() {
+        let lines = read_lines_as_vec("input_test/input_day16_test.txt").unwrap();
+
+        let result = part1(&lines);
+        assert_eq!(result, 1651);
+        let result = part2(&lines);
+        assert_eq!(result, 1707);
+    }
+}
