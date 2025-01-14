@@ -29,6 +29,7 @@ struct Edge {
 }
 
 fn part1(lines: &[String]) -> u32 {
+    // 2320
     let mut g = Graph {
         nodes: HashMap::new(),
     };
@@ -95,7 +96,7 @@ fn part1(lines: &[String]) -> u32 {
     let start_id = g.nodes.get("AA").unwrap().id;
     let valves_to_visit = get_valves_with_flow(&g);
 
-    let init_mask: u64 = (1 << g.nodes.len()) - 1;
+    let init_mask: u64 = 0;
     let max_flow = tsp_mod(&g, init_mask, start_id, &valves_to_visit, &d_matrix, 30, 0);
 
     max_flow
@@ -114,6 +115,7 @@ fn get_valve_cost_of_id(g: &Graph, id: u32) -> u32 {
 
 // https://github.com/WinterCore/aoc2022/blob/main/day16/main.rs
 // traveling salesman dont visit all values but only the ones with rate != 0
+// https://www.geeksforgeeks.org/travelling-salesman-problem-using-dynamic-programming/
 fn tsp_mod(g: &Graph, mask: u64, current_valve: u32, to_visit: &Vec<u32>, d_matrix: &Vec<Vec<u32>>, minutes: u32, flow: u32) -> u32 {
     let mut max_flow = flow;
 
@@ -125,12 +127,14 @@ fn tsp_mod(g: &Graph, mask: u64, current_valve: u32, to_visit: &Vec<u32>, d_matr
             .and_then(|x| x.checked_sub(1))
             .unwrap_or(0);
 
-        if (mask & (1 << valve)) == 0 || cur_minutes <= 0 {
+        // already visited or no time left
+        if (mask & (1 << valve)) != 0 || cur_minutes <= 0 {
             continue;
         }
 
         let cur_flow = flow + (cur_minutes * get_valve_cost_of_id(g, valve));
-        let cur_mask = mask & !(1 << valve);
+        // mark as visited
+        let cur_mask = mask | (1 << valve);
 
         max_flow = max_flow.max(tsp_mod(g, cur_mask, valve,
                                         to_visit, d_matrix, cur_minutes, cur_flow));
