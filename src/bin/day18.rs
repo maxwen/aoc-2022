@@ -66,6 +66,10 @@ fn is_neighbor(p1: Point3D, p2: Point3D) -> bool {
         .any(|&x| x == p2)
 }
 
+fn is_inside(p: Point3D, max_x: i32, max_y: i32, max_z: i32) -> bool {
+    (0..max_x + 1).contains(&p.x) &&  (0..max_y + 1).contains(&p.y) && (0..max_z + 1).contains(&p.z)
+}
+
 fn part1(lines: &[String]) -> u32 {
     // 3522
     let mut cubes = HashSet::new();
@@ -255,6 +259,26 @@ fn filter_wrong_enclosed(cubes: &HashSet<Point3D>, enclosed_cubes: &HashSet<Poin
     false_positives
 }
 
+fn fill_air(cubes: &HashSet<Point3D>, current: Point3D, visited: &mut HashSet<Point3D>, max_x: i32, max_y: i32, max_z: i32) {
+    for c in get_neighbors(current) {
+        if is_inside(c, max_x, max_y, max_z) {
+            if !cubes.contains(&c) && !visited.contains(&c) {
+                visited.insert(c);
+                fill_air(cubes, c, visited, max_x, max_y, max_z);
+            }
+        }
+    }
+}
+
+// lucky this worked with just 2 iterations
+// wrongly assume enclosed just extends x y z
+// then check for those if all their neighbours are
+// either cubes or also enclosed - that way we catch
+// the ones that still have air around like
+// # . #
+// @ . #
+// # # #
+// repeat this until we find no more wrong ones
 fn part2(lines: &[String]) -> u32 {
     // 2074
     let mut cubes = HashSet::new();
@@ -303,6 +327,69 @@ fn part2(lines: &[String]) -> u32 {
     open_side as u32
 }
 
+// brute force but for sure works
+// collect all outside - all points that are not in cubes recursive
+// then remove those and cubes from all to get the remaining which
+// must be inside. Then same as before
+fn part22(lines: &[String]) -> u32 {
+    // 2074
+    let mut cubes = HashSet::new();
+    let mut max_x = 0;
+    let mut max_y = 0;
+    let mut max_z = 0;
+
+    // let mut open_sides = part1(lines);
+
+    for (_, coords) in lines.iter().enumerate() {
+        let cube_coords = coords.split(",").map(|x| x.parse().unwrap()).collect::<Vec<i32>>();
+        let x = *cube_coords.get(0).unwrap();
+        let y = *cube_coords.get(1).unwrap();
+        let z = *cube_coords.get(2).unwrap();
+
+        max_x = max(max_x, x);
+        max_y = max(max_y, y);
+        max_z = max(max_z, z);
+
+        let cube = Point3D {
+            x,
+            y,
+            z,
+        };
+        cubes.insert(cube);
+    }
+
+    let mut air_cubes = HashSet::new();
+    let start = Point3D {
+        x: 0,
+        y: 0,
+        z: 0,
+    };
+    fill_air(&cubes, start, &mut air_cubes, max_x, max_y, max_z);
+
+    // println!("air_cubes {}", air_cubes.len());
+
+    let mut enclosed_cubes = HashSet::new();
+    for z in 0..max_z + 1 {
+        for y in 0..max_y + 1 {
+            for x in 0..max_x + 1 {
+                let c = Point3D {
+                    x,
+                    y,
+                    z,
+                };
+                if !cubes.contains(&c) && !air_cubes.contains(&c) {
+                    enclosed_cubes.insert(c);
+                }
+            }
+        }
+    }
+    // println!("enclosed_cubes {}", enclosed_cubes.len());
+
+    cubes.extend(&enclosed_cubes);
+    let open_side = get_open_sides(&cubes);
+    open_side as u32
+}
+
 fn main() {
     let lines = read_lines_as_vec("input/input_day18.txt").unwrap();
 
@@ -322,6 +409,8 @@ fn main() {
 
     println!("{}", part1(&lines));
     println!("{}", part2(&lines));
+    println!("{}", part22(&lines));
+
 }
 
 #[cfg(test)]
