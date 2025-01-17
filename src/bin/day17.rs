@@ -1,6 +1,7 @@
+use std::cmp::PartialEq;
+use aoc_2022::read_lines_as_vec;
 use itertools::Itertools;
 use std::collections::HashMap;
-use aoc_2022::read_lines_as_vec;
 
 const STACK_SIZE: usize = 50;
 
@@ -86,6 +87,22 @@ impl Chamber {
         }
         println!();
     }
+    fn print_chamber_slice(&self, line: &Vec<u8>) {
+        for y in 0..line.len() {
+            for x in 0..7 {
+                let mask = line.get(y).unwrap_or(&0u8);
+                let used = mask & (1 << x) != 0;
+                if used {
+                    print!("#")
+                } else {
+                    print!(".")
+                }
+            }
+            println!();
+        }
+        println!();
+    }
+
 
     fn get_chamber_top(&self) -> usize {
         for y in (0..self.top + 1).rev() {
@@ -205,8 +222,28 @@ impl Rock {
     }
 }
 
-fn part1(line: &String) -> usize {
-    // 3085
+#[derive(Debug, Clone)]
+struct CacheEntry {
+    rock_idx: usize,
+    top: usize,
+    state: CacheState,
+}
+
+#[derive(Debug, Clone, PartialOrd, PartialEq)]
+struct CacheState {
+    shape_idx: usize,
+    push_idx: usize,
+    rock_x: usize,
+    rock_y: usize,
+}
+
+#[derive(Debug, Clone)]
+struct MatchEntry {
+    rock_idx: usize,
+    cache: CacheEntry
+}
+
+fn drop_rocks(line: &String, num: usize, create_cache: bool, matches: &mut Vec<MatchEntry>) -> usize {
     let mut chamber = Chamber {
         rocks: vec![],
         impact_area_bit: HashMap::new(),
@@ -223,12 +260,17 @@ fn part1(line: &String) -> usize {
     let mut push_idx = 0;
     let mut first_rock = true;
     let mut first_rock_move_count = 0;
+    let mut do_create_cache = create_cache;
+    let mut cache: Vec<CacheEntry> = vec![];
+
     // println!("{}", push_list.len());
-    for i in 0..2022 {
-        let next_rock_shape = rock_order.get(i % rock_order.len()).unwrap();
+    for i in 0..num {
+        let rock_shape = i % rock_order.len();
+        let next_rock_shape = rock_order.get(rock_shape).unwrap();
         let mut rock = Rock::new(*next_rock_shape, chamber.top);
 
-        let next_push = push_list.get(push_idx % push_list.len()).unwrap();
+        let push_type = push_idx % push_list.len();
+        let next_push = push_list.get(push_type).unwrap();
         rock.push_it(&chamber, next_push);
         push_idx += 1;
 
@@ -244,62 +286,87 @@ fn part1(line: &String) -> usize {
                 break;
             }
         }
+
+        let state = CacheState {
+            shape_idx: rock_shape,
+            push_idx: push_type,
+            rock_x: chamber.top - rock.get_bottom(),
+            rock_y: rock.body.first().unwrap().0,
+        };
+
         rock.stopped = true;
         chamber.add_rock(&rock);
         chamber.rocks.push(rock);
-        let new_top = chamber.get_chamber_top();
-        chamber.top = new_top + 4;
+        let new_top = chamber.get_chamber_top() + 1;
 
-        // chamber.print_chamber(None);
+        if (do_create_cache) {
+            for cache_entry in cache.iter() {
+                let cache_state = cache_entry.state.clone();
+                if cache_state == state {
+                    let m = MatchEntry {
+                        rock_idx: cache_entry.rock_idx,
+                        cache: cache_entry.clone(),
+                    };
+                    matches.push(m);
+                }
+            }
+            if matches.len() >= 3 {
+                do_create_cache = false;
+            } else {
+                matches.clear();
+            }
+            let cache_entry = CacheEntry {
+                rock_idx: i,
+                top: chamber.get_chamber_top(),
+                state,
+            };
+            cache.push(cache_entry);
+        }
+
+        chamber.top = new_top + 3;
     }
     // chamber.print_chamber(None);
 
-    // let mut last_match = 0;
-    // let mut match_count = 0;
-    // let mut first_match = 0;
-    // for y in 0..chamber.get_chamber_top() + 1 {
-    //     let mask = chamber.impact_area_bit.get(&y).unwrap_or(&0u8);
-    //     let pattern = 0b1110111;
-    //     if *mask == pattern {
-    //         if first_match == 0 {
-    //             first_match = y
-    //         }
-    //         // println!("{} {}", y, y - last_match);
-    //         last_match = y;
-    //         match_count += 1;
-    //     }
-    // }
-    // match_count -= 1;
-    //
-    // println!("head = {}", first_match);
-    // println!("tail = {}", chamber.get_chamber_top() - last_match);
-    // println!("match_count = {}", match_count);
-
-    // let x = (1000000000000u64 / 2000);
-    // println!("{}", x);
-    // let x1 = 55 * x;
-    // println!("{}", x1);
-    // let x2 = 53 * x1;
-    // println!("{}", x2);
-    // chamber.print_chamber(None);
     chamber.get_chamber_top() + 1
 }
 
-fn part2(line: &String) -> u32 {
-    0u32
+fn part1(line: &String) -> usize {
+    drop_rocks(line, 2022, false, &mut vec![])
+}
+
+// how to catch cycle from
+// https://github.com/marcodelmastro/AdventOfCode2022/blob/main/Day17.ipynb
+fn part2(line: &String) -> u64 {
+    // 1535483870924
+    let mut matches: Vec<MatchEntry> = vec![];
+    // num must be high enough to get 3 matches
+    drop_rocks(line, 10000, true, &mut matches);
+    if matches.len() >= 3 {
+        let period_begin_height = matches[1].cache.top + matches[0].cache.top + 1;
+        let period_begin_rocks = matches[0].rock_idx + matches[1].rock_idx + 1;
+        let period_rocks = matches[2].rock_idx - matches[1].rock_idx;
+        let period_height = matches[2].cache.top - matches[1].cache.top;
+        let period_count = (1000000000000 - period_begin_rocks) / period_rocks;
+        let reminder_rocks = (1000000000000 - period_begin_rocks) % period_rocks + 1;
+
+        // to get reminder height we must call it again with one period
+        let mut reminder_height = drop_rocks(line, period_begin_rocks + period_rocks + reminder_rocks, false, &mut vec![]) - 1;
+        reminder_height -= period_begin_height + period_height;
+        return (period_begin_height + period_height * period_count + reminder_height) as u64;
+    }
+    0u64
 }
 
 fn main() {
     let lines = read_lines_as_vec("input/input_day17.txt").unwrap();
     // let lines = [">>><<><>><<<>><>>><<<>>><<<><<<>><>><<>>"].iter().map(|s| s.to_string()).collect::<Vec<_>>();
     println!("{}", part1(lines.first().unwrap()));
-    // println!("{}", part2(lines.first().unwrap()));
+    println!("{}", part2(lines.first().unwrap()));
 }
 
 #[cfg(test)]
 mod tests {
     use crate::{part1, part2};
-    use aoc_2022::read_lines_as_vec;
 
     #[test]
     fn it_works() {
@@ -307,7 +374,7 @@ mod tests {
 
         let result = part1(lines.first().unwrap());
         assert_eq!(result, 3068);
-        // let result = part2(&lines);
-        // assert_eq!(result, 1707);
+        let result = part2(lines.first().unwrap());
+        assert_eq!(result, 1514285714288);
     }
 }
