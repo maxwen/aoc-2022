@@ -244,6 +244,7 @@ struct MatchEntry {
 }
 
 fn drop_rocks(line: &String, num: usize, create_cache: bool, matches: &mut Vec<MatchEntry>) -> usize {
+    let mut rock_num = num;
     let mut chamber = Chamber {
         rocks: vec![],
         impact_area_bit: HashMap::new(),
@@ -260,11 +261,13 @@ fn drop_rocks(line: &String, num: usize, create_cache: bool, matches: &mut Vec<M
     let mut push_idx = 0;
     let mut first_rock = true;
     let mut first_rock_move_count = 0;
-    let mut do_create_cache = create_cache;
     let mut cache: Vec<CacheEntry> = vec![];
 
-    // println!("{}", push_list.len());
-    for i in 0..num {
+    if rock_num == 0 {
+        // when we cache we need at max that to find 3 matches
+        rock_num = rock_order.len() * push_list.len();
+    }
+    for i in 0..rock_num {
         let rock_shape = i % rock_order.len();
         let next_rock_shape = rock_order.get(rock_shape).unwrap();
         let mut rock = Rock::new(*next_rock_shape, chamber.top);
@@ -299,7 +302,7 @@ fn drop_rocks(line: &String, num: usize, create_cache: bool, matches: &mut Vec<M
         chamber.rocks.push(rock);
         let new_top = chamber.get_chamber_top() + 1;
 
-        if (do_create_cache) {
+        if (create_cache) {
             for cache_entry in cache.iter() {
                 let cache_state = cache_entry.state.clone();
                 if cache_state == state {
@@ -311,7 +314,8 @@ fn drop_rocks(line: &String, num: usize, create_cache: bool, matches: &mut Vec<M
                 }
             }
             if matches.len() >= 3 {
-                do_create_cache = false;
+                // we are done
+                return 0;
             } else {
                 matches.clear();
             }
@@ -339,8 +343,8 @@ fn part1(line: &String) -> usize {
 fn part2(line: &String) -> u64 {
     // 1535483870924
     let mut matches: Vec<MatchEntry> = vec![];
-    // num must be high enough to get 3 matches
-    drop_rocks(line, 10000, true, &mut matches);
+    // num will be calculated inside
+    drop_rocks(line, 0, true, &mut matches);
     if matches.len() >= 3 {
         let period_begin_height = matches[1].cache.top + matches[0].cache.top + 1;
         let period_begin_rocks = matches[0].rock_idx + matches[1].rock_idx + 1;
