@@ -4,9 +4,6 @@ use regex::Regex;
 use std::collections::HashSet;
 use std::time::Instant;
 
-#[global_allocator]
-static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
-
 #[derive(Debug, Clone)]
 enum BuildPlan {
     Nothing,
