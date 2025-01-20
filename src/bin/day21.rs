@@ -53,13 +53,16 @@ impl Monkey {
         }
     }
 
+    // do the reverse calculation of one part of the tree to match the wanted result_value
     fn rev_eval(&self, result_value: i64, eval_monkey: &String, monkey_map: &HashMap<String, RefCell<Monkey>>) -> i64 {
         match self.op {
             Operation::Plus => {
                 if eval_monkey == self.input1.as_ref().unwrap() {
+                    // left side
                     let m2 = monkey_map.get(self.input2.as_ref().unwrap()).unwrap().borrow();
                     result_value - m2.value
                 } else {
+                    // right side
                     let m1 = monkey_map.get(self.input1.as_ref().unwrap()).unwrap().borrow();
                     result_value - m1.value
                 }
@@ -85,7 +88,7 @@ impl Monkey {
             Operation::Div => {
                 if eval_monkey == self.input1.as_ref().unwrap() {
                     let m2 = monkey_map.get(self.input2.as_ref().unwrap()).unwrap().borrow();
-                    result_value * m2.value
+                    m2.value * result_value
                 } else {
                     let m1 = monkey_map.get(self.input1.as_ref().unwrap()).unwrap().borrow();
                     m1.value / result_value
@@ -134,7 +137,7 @@ fn part1(lines: &[String]) -> i64 {
     let mut monkeys = HashMap::new();
     for line in lines.iter() {
         let parts = line.split(":").collect::<Vec<_>>();
-        let monkey = parts.first().unwrap().to_string();
+        let monkey = parts.first().unwrap();
         let op = parts.last().unwrap();
         if re_digit.is_match(op) {
             let m = Monkey {
@@ -248,7 +251,7 @@ fn try_eval(monkey_map: &HashMap<String, RefCell<Monkey>>, target_node: &String,
     target.borrow().value
 }
 
-fn dijkstra(start_id: &String, end_id: String, monkey_map: &HashMap<String, RefCell<Monkey>>, path: &mut Vec<String>) -> u32 {
+fn dijkstra(start_id: &String, end_id: &String, monkey_map: &HashMap<String, RefCell<Monkey>>, path: &mut Vec<String>) {
     let mut stack = PriorityQueue::new();
     let mut p = vec![];
     p.push(start_id.clone());
@@ -259,9 +262,9 @@ fn dijkstra(start_id: &String, end_id: String, monkey_map: &HashMap<String, RefC
 
     while let Some((p, steps)) = stack.pop() {
         let current = p.last().unwrap();
-        if *current == end_id {
+        if current == end_id {
             p.iter().for_each(|e| path.push(e.clone()));
-            return steps;
+            return;
         }
 
         let m = monkey_map.get(&current.to_string()).unwrap();
@@ -269,17 +272,16 @@ fn dijkstra(start_id: &String, end_id: String, monkey_map: &HashMap<String, RefC
             let m1 = m.borrow().input1.as_ref().unwrap().to_string();
             let m2 = m.borrow().input2.as_ref().unwrap().to_string();
             for edge in vec![m1, m2] {
-                let dist_next_pos = seen.get(&edge.as_str().to_string()).unwrap_or(&u32::MAX);
+                let dist_next_pos = seen.get(&edge).unwrap_or(&u32::MAX);
                 if steps + 1 < *dist_next_pos {
                     let mut p1 = p.clone();
-                    p1.push(edge.as_str().to_string());
-                    seen.insert(edge.as_str().to_string(), steps + 1);
+                    p1.push(edge.clone());
+                    seen.insert(edge, steps + 1);
                     stack.push(p1, steps + 1);
                 }
             }
         }
     }
-    0
 }
 
 // target_node is the one we need to calc the value to
@@ -291,7 +293,7 @@ fn part2(lines: &[String], target_node: &String, ref_node: &String) -> i64 {
     let mut monkeys = HashMap::new();
     for line in lines.iter() {
         let parts = line.split(":").collect::<Vec<_>>();
-        let monkey = parts.first().unwrap().to_string();
+        let monkey = parts.first().unwrap();
         let op = parts.last().unwrap();
         if re_digit.is_match(op) {
             let m = Monkey {
@@ -361,7 +363,7 @@ fn part2(lines: &[String], target_node: &String, ref_node: &String) -> i64 {
     // humn is in left side of tree so value of cgdh must match qhpl
 
     let mut path: Vec<String> = vec![];
-    let _steps = dijkstra(target_node, "humn".to_string(), &monkeys, &mut path);
+    dijkstra(target_node, &"humn".to_string(), &monkeys, &mut path);
     // println!("{} {:?}", steps, path);
 
     // ebal once
