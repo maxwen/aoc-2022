@@ -314,34 +314,21 @@ fn get_position_on_face_transition(
                 new_direction,
             ),
             Direction::Down => (
-                (
-                    next_face_start_x + pos_offset_x,
-                    next_face_start_y + pos_offset_y,
-                ),
+                (next_face_end_x - pos_offset_x, next_face_start_y),
                 new_direction,
             ),
             Direction::Left => {
-                // dont exists
-                let trans_pos = (
-                    next_face_start_x + pos_offset_y,
-                    next_face_start_y + pos_offset_x,
-                );
+                let trans_pos = (next_face_end_x, next_face_end_y - pos_offset_x);
                 (trans_pos, new_direction)
             }
             Direction::Right => {
-                let trans_pos = (
-                    next_face_start_x + pos_offset_y,
-                    next_face_start_y + pos_offset_x,
-                );
+                let trans_pos = (next_face_start_x, next_face_start_y + pos_offset_x);
                 (trans_pos, new_direction)
             }
         },
         Direction::Down => match new_direction {
             Direction::Up => (
-                (
-                    next_face_start_x + pos_offset_x,
-                    next_face_start_y + pos_offset_y,
-                ),
+                (next_face_end_x - pos_offset_x, next_face_end_y),
                 new_direction,
             ),
 
@@ -350,35 +337,21 @@ fn get_position_on_face_transition(
                 new_direction,
             ),
             Direction::Left => {
-                let trans_pos = (
-                    next_face_start_x + pos_offset_y,
-                    next_face_start_y + pos_offset_x,
-                );
+                let trans_pos = (next_face_end_x, next_face_start_y + pos_offset_x);
                 (trans_pos, new_direction)
             }
             Direction::Right => {
-                // dont exists
-                let trans_pos = (
-                    next_face_start_x + pos_offset_y,
-                    next_face_start_y + pos_offset_x,
-                );
+                let trans_pos = (next_face_start_x, next_face_end_y - pos_offset_x);
                 (trans_pos, new_direction)
             }
         },
         Direction::Left => match new_direction {
             Direction::Up => {
-                // dont exists
-                let trans_pos = (
-                    next_face_start_x + pos_offset_y,
-                    next_face_start_y + pos_offset_x,
-                );
+                let trans_pos = (next_face_end_x - pos_offset_y, next_face_end_y);
                 (trans_pos, new_direction)
             }
             Direction::Down => {
-                let trans_pos = (
-                    next_face_start_x + pos_offset_y,
-                    next_face_start_y + pos_offset_x,
-                );
+                let trans_pos = (next_face_start_x + pos_offset_y, next_face_start_y);
                 (trans_pos, new_direction)
             }
             Direction::Left => (
@@ -386,34 +359,21 @@ fn get_position_on_face_transition(
                 new_direction,
             ),
             Direction::Right => (
-                (
-                    next_face_start_x + pos_offset_x,
-                    next_face_end_y - pos_offset_y,
-                ),
+                (next_face_start_x, next_face_end_y - pos_offset_y),
                 new_direction,
             ),
         },
         Direction::Right => match new_direction {
             Direction::Up => {
-                let trans_pos = (
-                    next_face_start_x + pos_offset_y,
-                    next_face_start_y + pos_offset_x,
-                );
+                let trans_pos = (next_face_start_x + pos_offset_y, next_face_end_y);
                 (trans_pos, new_direction)
             }
             Direction::Down => {
-                // dont exists
-                let trans_pos = (
-                    next_face_start_x + pos_offset_y,
-                    next_face_start_y + pos_offset_x,
-                );
+                let trans_pos = (next_face_end_x - pos_offset_y, next_face_start_y);
                 (trans_pos, new_direction)
             }
             Direction::Left => (
-                (
-                    next_face_start_x + pos_offset_x,
-                    next_face_end_y - pos_offset_y,
-                ),
+                (next_face_end_x, next_face_end_y - pos_offset_y),
                 new_direction,
             ),
             Direction::Right => (
@@ -531,97 +491,13 @@ fn get_possible_position_on_face(
     move_pos
 }
 
-fn part2(lines: &[String]) -> usize {
-    //  182170
-    let mut path_list: Vec<Order> = vec![];
-    let mut grid: HashMap<(usize, usize), Tile> = HashMap::new();
-    let mut grid_lines: HashMap<usize, GridLine> = HashMap::new();
-    let mut grid_columns: HashMap<usize, GridColumn> = HashMap::new();
-    let mut max_x = 0;
-
-    let mut path_idx = 0;
-    for (y, line) in lines.iter().enumerate() {
-        if line.len() == 0 {
-            path_idx = y + 1;
-            break;
-        }
-
-        let mut start_x: i32 = -1;
-        let mut end_x: i32 = -1;
-        for (x, c) in line.chars().enumerate() {
-            let pos = (x, y);
-            if c == '#' {
-                if start_x == -1 {
-                    start_x = x as i32;
-                }
-                grid.insert(pos, Tile::Wall);
-            } else if c == '.' {
-                if start_x == -1 {
-                    start_x = x as i32;
-                }
-                grid.insert(pos, Tile::Space);
-            }
-        }
-        end_x = (line.len() - 1) as i32;
-        max_x = max(end_x, max_x);
-
-        let grid_line = GridLine {
-            start: start_x as usize,
-            end: end_x as usize,
-        };
-        grid_lines.insert(y, grid_line);
-    }
-    let max_y = grid_lines.len() - 1;
-
-    for x in 0..max_x + 1 {
-        let mut start_y: i32 = -1;
-        let mut end_y: i32 = -1;
-        for y in 0..max_y + 1 {
-            let line = grid_lines.get(&y).unwrap();
-            if line.start <= x as usize && line.end >= x as usize {
-                if start_y == -1 {
-                    start_y = y as i32;
-                }
-            } else {
-                if start_y != -1 && end_y == -1 {
-                    end_y = (y - 1) as i32;
-                    break;
-                }
-            }
-        }
-        if start_y != -1 && end_y == -1 {
-            end_y = (grid_lines.len() - 1) as i32;
-        }
-        if start_y != -1 && end_y != -1 {
-            let r = GridColumn {
-                start: start_y as usize,
-                end: end_y as usize,
-            };
-            grid_columns.insert(x as usize, r);
-        }
-    }
-    // println!("{:?}", grid_lines);
-    // println!("{:?}", grid_columns);
-
-    let re = Regex::new(r"(\d+|L|R)").unwrap(); // \d means digit
-    let path = &lines[path_idx];
-    // println!("{}", path);
-
-    let moves = re.find_iter(path).collect::<Vec<_>>();
-    for m in moves {
-        let order = m.as_str();
-        match order {
-            "L" => path_list.push(Order::Left),
-            "R" => path_list.push(Order::Right),
-            _ => {
-                let num: usize = order.parse().unwrap();
-                path_list.push(Order::Move(num))
-            }
-        }
-    }
-    // println!("{} {}", max_x, max_y);
-
-    let cube_edge_x_length = (max_x as usize + 1) / 3;
+fn define_input_cube(
+    max_x: usize,
+    max_y: usize,
+    cube_face_map: &mut HashMap<usize, CubeFace>,
+    cube_face_edge_map: &mut HashMap<(usize, usize), Direction>,
+) {
+    let cube_edge_x_length = (max_x + 1) / 3;
     let cube_edge_x_0 = 0..cube_edge_x_length;
     let cube_edge_x_1 = cube_edge_x_length..cube_edge_x_length * 2;
     let cube_edge_x_2 = cube_edge_x_length * 2..cube_edge_x_length * 3;
@@ -635,7 +511,6 @@ fn part2(lines: &[String]) -> usize {
     // all of this is hard coded specific to my puzzle input
     // this will NOR work with example input
 
-    let mut cube_face_map: HashMap<usize, CubeFace> = HashMap::new();
     let cube_face_0 = CubeFace {
         x_range: cube_edge_x_1.clone(),
         y_range: cube_edge_y_0.clone(),
@@ -696,7 +571,6 @@ fn part2(lines: &[String]) -> usize {
     };
     cube_face_map.insert(5, cube_face_5);
 
-    let mut cube_face_edge_map: HashMap<(usize, usize), Direction> = HashMap::new();
     cube_face_edge_map.insert((0, 1), Direction::Right);
     cube_face_edge_map.insert((0, 2), Direction::Down);
     cube_face_edge_map.insert((0, 3), Direction::Right);
@@ -726,11 +600,202 @@ fn part2(lines: &[String]) -> usize {
     cube_face_edge_map.insert((5, 0), Direction::Down);
     cube_face_edge_map.insert((5, 1), Direction::Down);
     cube_face_edge_map.insert((5, 4), Direction::Up);
+}
+
+fn define_test_input_cube(
+    max_x: usize,
+    max_y: usize,
+    cube_face_map: &mut HashMap<usize, CubeFace>,
+    cube_face_edge_map: &mut HashMap<(usize, usize), Direction>,
+) {
+    let cube_edge_x_length = (max_x + 1) / 4;
+    let cube_edge_x_0 = 0..cube_edge_x_length;
+    let cube_edge_x_1 = cube_edge_x_length..cube_edge_x_length * 2;
+    let cube_edge_x_2 = cube_edge_x_length * 2..cube_edge_x_length * 3;
+    let cube_edge_x_3 = cube_edge_x_length * 3..cube_edge_x_length * 4;
+
+    let cube_edge_y_length = (max_y + 1) / 3;
+    let cube_edge_y_0 = 0..cube_edge_y_length;
+    let cube_edge_y_1 = cube_edge_y_length..cube_edge_y_length * 2;
+    let cube_edge_y_2 = cube_edge_y_length * 2..cube_edge_y_length * 3;
+
+    // all of this is hard coded specific to my puzzle input
+    // this will NOR work with example input
+
+    let cube_face_0 = CubeFace {
+        x_range: cube_edge_x_2.clone(),
+        y_range: cube_edge_y_0.clone(),
+        down_face_id: 3,
+        up_face_id: 1,
+        left_face_id: 2,
+        right_face_id: 5,
+    };
+    cube_face_map.insert(0, cube_face_0);
+
+    let cube_face_1 = CubeFace {
+        x_range: cube_edge_x_0.clone(),
+        y_range: cube_edge_y_1.clone(),
+        down_face_id: 4,
+        up_face_id: 0,
+        left_face_id: 5,
+        right_face_id: 2,
+    };
+    cube_face_map.insert(1, cube_face_1);
+
+    let cube_face_2 = CubeFace {
+        x_range: cube_edge_x_1.clone(),
+        y_range: cube_edge_y_1.clone(),
+        down_face_id: 4,
+        up_face_id: 0,
+        left_face_id: 1,
+        right_face_id: 3,
+    };
+    cube_face_map.insert(2, cube_face_2);
+
+    let cube_face_3 = CubeFace {
+        x_range: cube_edge_x_2.clone(),
+        y_range: cube_edge_y_1.clone(),
+        down_face_id: 4,
+        up_face_id: 0,
+        left_face_id: 2,
+        right_face_id: 5,
+    };
+    cube_face_map.insert(3, cube_face_3);
+
+    let cube_face_4 = CubeFace {
+        x_range: cube_edge_x_2.clone(),
+        y_range: cube_edge_y_2.clone(),
+        down_face_id: 1,
+        up_face_id: 3,
+        left_face_id: 2,
+        right_face_id: 5,
+    };
+    cube_face_map.insert(4, cube_face_4);
+
+    let cube_face_5 = CubeFace {
+        x_range: cube_edge_x_3.clone(),
+        y_range: cube_edge_y_2.clone(),
+        down_face_id: 1,
+        up_face_id: 3,
+        left_face_id: 4,
+        right_face_id: 0,
+    };
+    cube_face_map.insert(5, cube_face_5);
+
+    cube_face_edge_map.insert((0, 1), Direction::Down);
+    cube_face_edge_map.insert((0, 2), Direction::Down);
+    cube_face_edge_map.insert((0, 3), Direction::Down);
+    cube_face_edge_map.insert((0, 5), Direction::Left);
+
+    cube_face_edge_map.insert((1, 0), Direction::Down);
+    cube_face_edge_map.insert((1, 5), Direction::Up);
+    cube_face_edge_map.insert((1, 2), Direction::Right);
+    cube_face_edge_map.insert((1, 4), Direction::Up);
+
+    cube_face_edge_map.insert((2, 0), Direction::Right);
+    cube_face_edge_map.insert((2, 3), Direction::Right);
+    cube_face_edge_map.insert((2, 4), Direction::Right);
+    cube_face_edge_map.insert((2, 1), Direction::Left);
+
+    cube_face_edge_map.insert((3, 2), Direction::Left);
+    cube_face_edge_map.insert((3, 0), Direction::Up);
+    cube_face_edge_map.insert((3, 5), Direction::Down);
+    cube_face_edge_map.insert((3, 4), Direction::Down);
+
+    cube_face_edge_map.insert((4, 2), Direction::Up);
+    cube_face_edge_map.insert((4, 3), Direction::Up);
+    cube_face_edge_map.insert((4, 5), Direction::Right);
+    cube_face_edge_map.insert((4, 1), Direction::Up);
+
+    cube_face_edge_map.insert((5, 3), Direction::Left);
+    cube_face_edge_map.insert((5, 0), Direction::Left);
+    cube_face_edge_map.insert((5, 1), Direction::Right);
+    cube_face_edge_map.insert((5, 4), Direction::Left);
+}
+
+fn part2(lines: &[String], test: bool) -> usize {
+    //  182170
+    let mut path_list: Vec<Order> = vec![];
+    let mut grid: HashMap<(usize, usize), Tile> = HashMap::new();
+    let mut grid_lines: HashMap<usize, GridLine> = HashMap::new();
+    let mut max_x = 0;
+
+    let mut path_idx = 0;
+    for (y, line) in lines.iter().enumerate() {
+        if line.len() == 0 {
+            path_idx = y + 1;
+            break;
+        }
+
+        let mut start_x: i32 = -1;
+        let mut end_x: i32 = -1;
+        for (x, c) in line.chars().enumerate() {
+            let pos = (x, y);
+            if c == '#' {
+                if start_x == -1 {
+                    start_x = x as i32;
+                }
+                grid.insert(pos, Tile::Wall);
+            } else if c == '.' {
+                if start_x == -1 {
+                    start_x = x as i32;
+                }
+                grid.insert(pos, Tile::Space);
+            }
+        }
+        end_x = (line.len() - 1) as i32;
+        max_x = max(end_x, max_x);
+
+        let grid_line = GridLine {
+            start: start_x as usize,
+            end: end_x as usize,
+        };
+        grid_lines.insert(y, grid_line);
+    }
+    let max_y = grid_lines.len() - 1;
+
+    let re = Regex::new(r"(\d+|L|R)").unwrap(); // \d means digit
+    let path = &lines[path_idx];
+    // println!("{}", path);
+
+    let moves = re.find_iter(path).collect::<Vec<_>>();
+    for m in moves {
+        let order = m.as_str();
+        match order {
+            "L" => path_list.push(Order::Left),
+            "R" => path_list.push(Order::Right),
+            _ => {
+                let num: usize = order.parse().unwrap();
+                path_list.push(Order::Move(num))
+            }
+        }
+    }
+    // println!("{} {}", max_x, max_y);
+
+    // all of this is hard coded specific to my puzzle input
+    // this will NOR work with example input
+    let mut cube_face_map: HashMap<usize, CubeFace> = HashMap::new();
+    let mut cube_face_edge_map: HashMap<(usize, usize), Direction> = HashMap::new();
+    if test {
+        define_test_input_cube(
+            max_x as usize,
+            max_y,
+            &mut cube_face_map,
+            &mut cube_face_edge_map,
+        );
+    } else {
+        define_input_cube(
+            max_x as usize,
+            max_y,
+            &mut cube_face_map,
+            &mut cube_face_edge_map,
+        );
+    }
 
     let mut current_pos = ((grid_lines.get(&0).unwrap().start, 0), Direction::Right);
 
     for order in path_list.iter() {
-        println!("{:?} {:?}", order, current_pos);
+        // println!("{:?} {:?}", order, current_pos);
         match order {
             Order::Move(steps) => {
                 let new_pos = get_possible_position_on_face(
@@ -753,6 +818,7 @@ fn part2(lines: &[String]) -> usize {
             }
         }
     }
+    // println!("{:?}", current_pos);
     (current_pos.0 .0 + 1) * 4 + (current_pos.0 .1 + 1) * 1000 + get_direction_value(&current_pos.1)
 }
 
@@ -775,12 +841,12 @@ fn main() {
     //                  "10R5L5R10L4R5L5"].iter().map(|s| s.to_string()).collect::<Vec<_>>();
 
     println!("{}", part1(&lines));
-    println!("{}", part2(&lines));
+    println!("{}", part2(&lines, false));
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::part1;
+    use crate::{part1, part2};
 
     #[test]
     fn it_works() {
@@ -806,7 +872,7 @@ mod tests {
 
         let result = part1(&lines);
         assert_eq!(result, 6032);
-        // let result = part2(&lines);
-        // assert_eq!(result, 301);
+        let result = part2(&lines, true);
+        assert_eq!(result, 5031);
     }
 }
