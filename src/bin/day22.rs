@@ -78,12 +78,13 @@ fn get_possible_pos_in_direction(
     grid_lines: &HashMap<usize, GridLine>,
     grid_columns: &HashMap<usize, GridColumn>,
     steps: usize,
-    pos: (usize, usize),
-    direction: &Direction,
+    pos: ((usize, usize), Direction),
 ) -> (usize, usize) {
+    let direction = pos.1;
+    let mut move_pos = pos.0;
+
     match direction {
         Direction::Up => {
-            let mut move_pos = pos;
             for _ in 0..steps {
                 let old_pos = move_pos;
                 let grid_columns = grid_columns.get(&move_pos.0).unwrap();
@@ -97,10 +98,8 @@ fn get_possible_pos_in_direction(
                     return (old_pos.0, old_pos.1);
                 }
             }
-            move_pos
         }
         Direction::Down => {
-            let mut move_pos = pos;
             for _ in 0..steps {
                 let old_pos = move_pos;
                 let grid_columns = grid_columns.get(&move_pos.0).unwrap();
@@ -114,10 +113,8 @@ fn get_possible_pos_in_direction(
                     return (old_pos.0, old_pos.1);
                 }
             }
-            move_pos
         }
         Direction::Left => {
-            let mut move_pos = pos;
             for _ in 0..steps {
                 let old_pos = move_pos;
                 let grid_line = grid_lines.get(&move_pos.1).unwrap();
@@ -131,10 +128,8 @@ fn get_possible_pos_in_direction(
                     return (old_pos.0, old_pos.1);
                 }
             }
-            move_pos
         }
         Direction::Right => {
-            let mut move_pos = pos;
             for _ in 0..steps {
                 let old_pos = move_pos;
                 let grid_line = grid_lines.get(&move_pos.1).unwrap();
@@ -148,9 +143,9 @@ fn get_possible_pos_in_direction(
                     return (old_pos.0, old_pos.1);
                 }
             }
-            move_pos
         }
     }
+    move_pos
 }
 
 fn part1(lines: &[String]) -> usize {
@@ -169,7 +164,6 @@ fn part1(lines: &[String]) -> usize {
         }
 
         let mut start_x: i32 = -1;
-        let mut end_x: i32 = -1;
         for (x, c) in line.chars().enumerate() {
             let pos = (x, y);
             if c == '#' {
@@ -184,7 +178,7 @@ fn part1(lines: &[String]) -> usize {
                 grid.insert(pos, Tile::Space);
             }
         }
-        end_x = (line.len() - 1) as i32;
+        let end_x = (line.len() - 1) as i32;
         max_x = max(end_x, max_x);
 
         let grid_line = GridLine {
@@ -254,8 +248,7 @@ fn part1(lines: &[String]) -> usize {
                     &grid_lines,
                     &grid_columns,
                     *steps,
-                    current_pos.0,
-                    &current_pos.1,
+                    current_pos.clone(),
                 );
                 current_pos = (new_pos, current_pos.1);
             }
@@ -277,11 +270,11 @@ fn get_cube_face_id_of_pos(
     pos: (usize, usize),
 ) -> Option<usize> {
     for cube_face in cube_face_map.iter() {
-        let face_id = *cube_face.0;
+        let face_id = cube_face.0;
         let face = cube_face.1;
 
         if face.x_range.contains(&pos.0) && face.y_range.contains(&pos.1) {
-            return Some(face_id);
+            return Some(*face_id);
         }
     }
     // should never happen
@@ -392,8 +385,8 @@ fn get_possible_position_on_face(
     pos: (usize, usize),
     direction: &Direction,
 ) -> ((usize, usize), Direction) {
-    let start_face_id = get_cube_face_id_of_pos(cube_face_map, pos).unwrap();
-    let start_face = cube_face_map.get(&start_face_id).unwrap();
+    let _start_face_id = get_cube_face_id_of_pos(cube_face_map, pos).unwrap();
+    let _start_face = cube_face_map.get(&_start_face_id).unwrap();
 
     let mut move_pos = (pos, direction.clone());
     for _ in 0..steps {
@@ -507,9 +500,6 @@ fn define_input_cube(
     let cube_edge_y_1 = cube_edge_y_length..cube_edge_y_length * 2;
     let cube_edge_y_2 = cube_edge_y_length * 2..cube_edge_y_length * 3;
     let cube_edge_y_3 = cube_edge_y_length * 3..cube_edge_y_length * 4;
-
-    // all of this is hard coded specific to my puzzle input
-    // this will NOR work with example input
 
     let cube_face_0 = CubeFace {
         x_range: cube_edge_x_1.clone(),
@@ -728,7 +718,6 @@ fn part2(lines: &[String], test: bool) -> usize {
         }
 
         let mut start_x: i32 = -1;
-        let mut end_x: i32 = -1;
         for (x, c) in line.chars().enumerate() {
             let pos = (x, y);
             if c == '#' {
@@ -743,7 +732,7 @@ fn part2(lines: &[String], test: bool) -> usize {
                 grid.insert(pos, Tile::Space);
             }
         }
-        end_x = (line.len() - 1) as i32;
+        let end_x = (line.len() - 1) as i32;
         max_x = max(end_x, max_x);
 
         let grid_line = GridLine {
