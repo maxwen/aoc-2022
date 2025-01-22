@@ -146,8 +146,9 @@ fn update_grid(elves_map: &HashMap<usize, Elve>, grid: &mut HashMap<(i32, i32), 
     }
 }
 
-fn part1(lines: &[String]) -> usize {
-    // 3871
+fn part12(lines: &[String], part2: bool) -> usize {
+    // part1 = 3871
+    // part2 = 925
     let mut grid: HashMap<(i32, i32), Tile> = HashMap::new();
     let mut elves_map: HashMap<usize, Elve> = HashMap::new();
     let mut elve_id = 0;
@@ -182,7 +183,8 @@ fn part1(lines: &[String]) -> usize {
     ));
     // println!("{:?}", wish_direction_list);
 
-    for _ in 0..10 {
+    let mut rounds = if part2 { 1000 } else { 10 };
+    for round in 0..rounds {
         // print_grid(&grid);
         let mut wishes: HashMap<(i32, i32), Vec<usize>> = HashMap::new();
         for e in elves_map.values() {
@@ -200,6 +202,9 @@ fn part1(lines: &[String]) -> usize {
             .filter(|entry| entry.1.len() == 1)
             .collect::<Vec<_>>();
 
+        if part2 && moves.len() == 0 {
+            return round + 1;
+        }
         for e in moves.iter() {
             let move_pos = e.0;
             let move_elve_id = e.1.first().unwrap();
@@ -212,8 +217,14 @@ fn part1(lines: &[String]) -> usize {
     get_elves_area_space_tiles(&grid)
 }
 
+fn part1(lines: &[String]) -> usize {
+    // 3871
+    part12(&lines, false)
+}
+
 fn part2(lines: &[String]) -> usize {
-    0usize
+    // 925
+    part12(&lines, true)
 }
 
 fn main() {
@@ -232,7 +243,7 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
-    use crate::part1;
+    use crate::{part1, part2};
 
     #[test]
     fn it_works() {
@@ -245,7 +256,7 @@ mod tests {
 
         let result = part1(&lines);
         assert_eq!(result, 110);
-        // let result = part2(&lines);
-        // assert_eq!(result, 5031);
+        let result = part2(&lines);
+        assert_eq!(result, 20);
     }
 }
