@@ -1,10 +1,10 @@
-use aoc_2022::read_lines_as_vec;
 use itertools::Itertools;
 use std::cell::RefCell;
 use std::cmp::PartialEq;
 use std::collections::{HashMap, HashSet, VecDeque};
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
+use aoc_2022::read_lines_as_vec;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum Tile {
@@ -54,9 +54,16 @@ fn get_possible_steps(grid: &Grid, free_cache_set: &FreeState, pos: (u16, u16)) 
         if d == Step::Wait {
             continue;
         }
-        if pos == grid.start_pos && d != Step::Down {
+        if grid.start_pos.1 == 0 && pos == grid.start_pos && d != Step::Down {
+            // just to prevent -1 overflow below
             continue;
         }
+
+        if grid.start_pos.1 == grid.grid_height - 1 && pos == grid.start_pos && d != Step::Up {
+            // just to prevent -1 overflow below
+            continue;
+        }
+
         let pos = get_step_position(pos, &d);
         if !free_cache_set.data.contains(&pos) {
             continue;
@@ -136,6 +143,7 @@ struct Grid {
     blizzard_list: HashMap<u16, RefCell<Blizzard>>,
     start_pos: (u16, u16),
     end_pos: (u16, u16),
+    start_time: u16,
 }
 
 impl Grid {
@@ -227,7 +235,7 @@ fn bfs(grid: &Grid, free_state_cache: &HashMap<u16, FreeState>) -> u16 {
     let mut stack: VecDeque<State> = VecDeque::new();
     let s = State {
         pos: grid.start_pos,
-        steps: 0,
+        steps: grid.start_time,
     };
     stack.push_back(s.clone());
 
@@ -267,7 +275,7 @@ fn bfs(grid: &Grid, free_state_cache: &HashMap<u16, FreeState>) -> u16 {
     min
 }
 
-fn part1(lines: &[String]) -> u16 {
+fn init_grid(lines: &[String]) -> Grid {
     let mut grid = Grid {
         grid_data: HashMap::new(),
         grid_width: 0,
@@ -275,6 +283,7 @@ fn part1(lines: &[String]) -> u16 {
         blizzard_list: HashMap::new(),
         start_pos: (0, 0),
         end_pos: (0, 0),
+        start_time: 0,
     };
 
     let mut blizzard_id = 0;
@@ -309,7 +318,11 @@ fn part1(lines: &[String]) -> u16 {
             grid.grid_height += 1;
         }
     }
+    grid
+}
 
+// creates a list of free pos for a specific time
+fn create_free_space_map(grid: &Grid) -> HashMap<u16, FreeState> {
     // https://github.com/ritesh-singh/aoc-2022-kotlin/blob/main/src/day24/Day24.kt
     // let lcm = lcm(grid.grid_width - 2, grid.grid_height - 2);
     // println!("lcm = {}", lcm);
@@ -333,12 +346,39 @@ fn part1(lines: &[String]) -> u16 {
         free_state_cache.insert(steps, free_state);
         steps += 1;
     }
+    free_state_cache
+}
+
+fn part1(lines: &[String]) -> u16 {
+    // 253
+    let grid = init_grid(lines);
+    let free_state_cache = create_free_space_map(&grid);
 
     bfs(&grid, &free_state_cache)
 }
 
 fn part2(lines: &[String]) -> u16 {
-    0u16
+    // 794
+    let mut grid = init_grid(lines);
+    let free_state_cache = create_free_space_map(&grid);
+
+    let down = bfs(&grid, &free_state_cache);
+
+    grid.start_time = down;
+    let temp = grid.end_pos;
+    grid.end_pos = grid.start_pos;
+    grid.start_pos = temp;
+
+    let up = bfs(&grid, &free_state_cache);
+
+    grid.start_time = up;
+    let temp = grid.start_pos;
+    grid.start_pos = grid.end_pos;
+    grid.end_pos = temp;
+
+    let down2 = bfs(&grid, &free_state_cache);
+
+    down2
 }
 
 fn main() {
@@ -379,7 +419,7 @@ mod tests {
 
         let result = part1(&lines);
         assert_eq!(result, 18);
-        // let result = part2(&lines);
-        // assert_eq!(result, 20);
+        let result = part2(&lines);
+        assert_eq!(result, 54);
     }
 }
